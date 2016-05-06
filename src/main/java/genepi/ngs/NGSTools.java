@@ -14,7 +14,7 @@ public class NGSTools extends Toolbox {
 	
 	public static void main (String[] args){
 		
-		NGSTools tools = new NGSTools("jar ngs-tools.jar", args);
+		NGSTools tools = new NGSTools("java -jar ngs-tools.jar", args);
 		
 		tools.addTool("site-generator", GenerateSites.class);
 		
