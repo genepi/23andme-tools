@@ -10,13 +10,13 @@ This github project includes 2 tools:
 Your personal genome can be downloaded from [here](https://www.23andme.com/you/download). After entering your secure answer, the complete dataset can be downloaded at once (zip file).
 
 ## Generate the chip sites
-I already generated a site list for the current 23andMe version 4 (v4) genotyping chip (May 2016). It basically extracts the information from your personal genome (without the genotype) and adds the reference base from the FWD strand. If your data has been genotyped with this version of the chip, you can skip this step. For older chip versions (v1-v3) I would very much appreciate a pull request to the repository. 
+I already generated a site list for the current 23andMe version 4 (v4) genotyping chip (May 2016) including 610544 sites. It basically extracts the information from your personal genome (without the genotype) and adds the reference base from the FWD strand. If your data has been genotyped with this version of the chip, you can skip this step. For older chip versions (v1-v3) I would very much appreciate a pull request to the repository. 
 
 ```bash
 git clone https://github.com/seppinho/23andme-tools.git
 cd 23andme-tools
 mvn install
-java -jar target/23andme-tools-0.1.jar site-generator --ref <human_g1k_v37.fasta> --in <23andme.txt> --out <target-list.txt>
+java -jar target/23andme-tools-0.1.jar site-generator --ref <human_g1k_v37.fasta> --in <23andme.txt> --out <23andme-v4-GRCh37-fwd.txt>
 
 ```
 The human_g1k_v37.fasta file is not included in this repository but can be downloaded from here: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/
