@@ -1,13 +1,16 @@
-# 23andme Tools
-23andMe files come in a txt file format. To process these files further (e.g. for Imputation with https://imputationserver.sph.umich.edu), VCFs are needed. This project has been inspired by https://github.com/arrogantrobot/23andme2vcf and provides a simple Java implementation.
+# 23andMe Tools - 23andMe data to VCF
+23andMe raw data is provided in a tab-delimited text format including 4 columns (#rsid;chromosome;position;genotype). To process these files further (e.g. for Imputation with the [Michigan Imputation Server](https://imputationserver.sph.umich.edu) or for assigning a mitochondrial haplogroup with [HaploGrep](http://haplogrep.uibk.ac.at)), VCF files are needed. Here we provide a simple Java implementation to convert your 23andMe raw data into VCFs. Credits to [this](https://github.com/arrogantrobot/23andme2vcf) project, which provides a working perl implementation.  
 
-Currently two tools are available:
+This github project includes 2 tools:
 
-* site-generator: Extracts all sites from the human genome (build 37) fasta file (human_g1k_v37.fasta). It writes the same file format as used in https://github.com/arrogantrobot/23andme2vcf. 
+* site-generator: Extracts all sites from the human genome (build 37) fasta file (human_g1k_v37.fasta) and generates a chip-specific file. For simplicity, the same file format as described in the perl project above is generated. 
 * vcf-generator: Generates valid VCF files out of the 23andMe raw data.
 
+## Get your data
+Your personal genome can be downloaded from [here](https://www.23andme.com/you/download). After entering your secure answer, the complete dataset can be downloaded at once (zip file).
 
-### site-generator
+## Generate the chip sites
+I already generated a site list for the current 23andMe version 4 (v4) genotyping chip (May 2016). It basically extracts the information from your personal genome (without the genotype) and adds the reference base from the FWD strand. If your data has been genotyped with this version of the chip, you can skip this step. For older chip versions (v1-v3) I would very much appreciate a pull request to the repository. 
 
 ```bash
 git clone https://github.com/seppinho/23andme-tools.git
@@ -22,3 +25,6 @@ wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.
 wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.fai
 gunzip human_g1k_v37.fasta.gz
 ```
+
+## Generate a VCF file
+//todo
