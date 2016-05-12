@@ -1,12 +1,12 @@
-package genepi.ngs;
+package genepi.vcf;
 
 import java.lang.reflect.InvocationTargetException;
 
 import genepi.base.Toolbox;
 
-public class NGSTools extends Toolbox {
+public class Tools extends Toolbox {
 
-	public NGSTools(String command, String[] args) {
+	public Tools(String command, String[] args) {
 		
 		super(command, args);
 		
@@ -14,9 +14,10 @@ public class NGSTools extends Toolbox {
 	
 	public static void main (String[] args){
 		
-		NGSTools tools = new NGSTools("java -jar ngs-tools.jar", args);
+		Tools tools = new Tools("jar vcf-tools.jar", args);
 		
 		tools.addTool("site-generator", GenerateSites.class);
+		tools.addTool("vcf-generator", GenerateVCF.class);
 		
 		try {
 			tools.start();

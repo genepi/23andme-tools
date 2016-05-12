@@ -1,4 +1,4 @@
-package genepi.ngs;
+package genepi.vcf;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,35 +16,35 @@ public class GenerateSites extends Tool {
 
 	@Override
 	public void init() {
-		
-		System.out.println("Generate Target List from 23andme Raw Data\n\n");
+
+		System.out.println("Generate Chip Target List from your 23andMe Raw Data\n\n");
 
 	}
 
 	@Override
 	public void createParameters() {
-		
+
 		addParameter("ref", "input human_g1k_v37.fasta");
-		addParameter("in", "input 23andme raw data");
-		addParameter("out", "output target list");
+		addParameter("genome", "input your personal 23andme raw data");
+		addParameter("out", "output chip target list");
 
 	}
 
 	@Override
 	public int run() {
-		
+
 		try {
 
-			String in = (String) getValue("in");
+			String genome = (String) getValue("genome");
+			String ref = (String) getValue("ref");
 			String out = (String) getValue("out");
-			String fasta = (String) getValue("ref");
-			
-			LineReader reader = new LineReader(in);
-			LineWriter writer = new LineWriter(out);
-			StringBuilder outFile = new StringBuilder();
-			IndexedFastaSequenceFile file = new IndexedFastaSequenceFile(
-					new File(fasta));
 
+			LineReader reader = new LineReader(genome);
+			IndexedFastaSequenceFile file = new IndexedFastaSequenceFile(new File(ref));
+			LineWriter writer = new LineWriter(out);
+
+			StringBuilder outFile = new StringBuilder();
+			
 			while (reader.next()) {
 
 				String line = reader.get();
