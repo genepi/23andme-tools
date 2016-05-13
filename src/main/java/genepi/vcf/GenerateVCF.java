@@ -8,12 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import genepi.base.Tool;
 import genepi.io.text.LineReader;
+import genepi.objects.Chip;
+import genepi.objects.Genome;
 import genepi.util.Chromosome;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
@@ -42,7 +40,7 @@ public class GenerateVCF extends Tool {
 	@Override
 	public void init() {
 
-		System.out.println("Generate vcf.gz files from your 23andme Raw Data\n\n");
+		System.out.println("Generate vcf.gz files from your 23andMe Genotype Data\n\n");
 
 	}
 
@@ -52,6 +50,7 @@ public class GenerateVCF extends Tool {
 		addParameter("genome", "input 23andme raw data");
 		addParameter("chip", "input chip target list");
 		addParameter("out", "output vcf directory");
+		addOptionalParameter("chr", "chr to convert", STRING);
 
 	}
 
@@ -60,14 +59,15 @@ public class GenerateVCF extends Tool {
 
 		try {
 			String in = (String) getValue("genome");
-			String chip = (String) getValue("chip");
-			String out = (String) getValue("out");
+			String chipName = (String) getValue("chip");
+			String outDirectory = (String) getValue("out");
+			String chr = (String) getValue("chr");
 			
-			new File(out).mkdirs();
+			new File(outDirectory).mkdirs();
 
-			LineReader chipReader = new LineReader(chip);
+			LineReader chipReader = new LineReader(chipName);
 			LineReader dataReader = new LineReader(in);
-			VariantContextWriter writer2 = null;
+			VariantContextWriter vcfWriter = null;
 			VCFHeader header = null;
 			String prev = "";
 
@@ -77,49 +77,56 @@ public class GenerateVCF extends Tool {
 					continue;
 				}
 
+				Genome genome = new Genome(dataReader.get());
+
 				chipReader.next();
+				Chip chip = new Chip(chipReader.get());
 
-				String[] chipSplit = chipReader.get().split("\t");
-				String[] dataSplit = dataReader.get().split("\t");
+				//if chr option is set, go to this location and start converting
+				if (chr!=null && !genome.getChromosome().equals(chr)) {
+					chipReader.next();
+					continue;
+				}
 
-				if (!dataSplit[2].equals(chipSplit[1])) {
-					System.err.println("Control Chip version! Positions should be identical in both files");
+				if (genome.getPos() != chip.getPos()) {
+					System.err.println("Control chip version! Positions should be identical in both files");
 					System.exit(-1);
 				}
 
-				String rsid = dataSplit[0];
-				String chromosome = dataSplit[1];
-				int pos = Integer.valueOf(dataSplit[2]);
-				String genotype = dataSplit[3];
-				String ref = chipSplit[3];
+				Allele refAllele = Allele.create(chip.getRef(), true);
+				Allele altAllele = null;
+				boolean heterozygous = false;
+				boolean homozygous = false;
 
-				if (genotype.contains("I") || genotype.contains("D") || genotype.contains("-")
+				String genotype = genome.getGenotype();
+				String chromosome = genome.getChromosome();
+				String g0 = genotype.substring(0, 1);
+				String g1 = null;
+
+				if (genome.getGenotype().contains("I") || genotype.contains("D") || genotype.contains("-")
 						|| genotype.length() > 2) {
 					continue;
 				}
 
 				if (!chromosome.equals(prev)) {
 
-					if (writer2 != null) {
-						writer2.close();
+					if (vcfWriter != null) {
+						vcfWriter.close();
 					}
 
 					header = generateHeader(chromosome);
+
 					VariantContextWriterBuilder builder = new VariantContextWriterBuilder()
-							.setOutputFile(out + "/" + chromosome + ".vcf.gz").unsetOption(Options.INDEX_ON_THE_FLY);
-					writer2 = builder.build();
-					writer2.writeHeader(header);
+							.setOutputFile(outDirectory + File.separator + chromosome + ".vcf.gz")
+							.unsetOption(Options.INDEX_ON_THE_FLY);
+
+					vcfWriter = builder.build();
+
+					vcfWriter.writeHeader(header);
+
 					prev = chromosome;
 
 				}
-
-				Allele refAllele = Allele.create(ref, true);
-				Allele altAllele = null;
-				boolean heterozygous = false;
-				boolean homozygous = false;
-
-				String g0 = genotype.substring(0, 1);
-				String g1 = null;
 
 				if (genotype.length() == 2) {
 					g1 = genotype.substring(1, 2);
@@ -127,11 +134,11 @@ public class GenerateVCF extends Tool {
 
 				// heterozygous check
 				if (g1 != null && !g0.equals(g1)) {
-					altAllele = Allele.create(!ref.equals(g0) ? g0 : g1, false);
+					altAllele = Allele.create(!chip.getRef().equals(g0) ? g0 : g1, false);
 					heterozygous = true;
 				}
 				// homozygous check
-				else if (!ref.equals(g0)) {
+				else if (!chip.getRef().equals(g0)) {
 					altAllele = Allele.create(g0, false);
 					homozygous = true;
 				}
@@ -139,29 +146,26 @@ public class GenerateVCF extends Tool {
 				else {
 				}
 
+				final List<Allele> alleles = new ArrayList<Allele>();
+				alleles.add(refAllele);
+				alleles.add(altAllele);
+
 				if (heterozygous) {
 
-					List<Allele> alleles = new ArrayList<Allele>();
-					alleles.add(refAllele);
-					alleles.add(altAllele);
-
-					writer2.add(createVC(header, chromosome, rsid, alleles, alleles, pos));
+					// set alleles for genotype
+					vcfWriter.add(createVC(header, chromosome, genome.getRsid(), alleles, alleles, genome.getPos()));
 
 				} else if (homozygous) {
 
-					final List<Allele> alleles = new ArrayList<Allele>();
-					alleles.add(refAllele);
-					alleles.add(altAllele);
-
 					final List<Allele> genotypes = new ArrayList<Allele>();
 					genotypes.add(altAllele);
+					vcfWriter.add(createVC(header, chromosome, genome.getRsid(), alleles, genotypes, genome.getPos()));
 
-					writer2.add(createVC(header, chromosome, rsid, alleles, genotypes, pos));
 				}
 
 			} // while loop
 
-			writer2.close();
+			vcfWriter.close();
 
 			return 0;
 
@@ -180,7 +184,7 @@ public class GenerateVCF extends Tool {
 				VCFHeaderVersion.VCF4_0.getVersionString()));
 		headerLines.add(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_KEY, 1, VCFHeaderLineType.String, "Genotype"));
 
-		additionalColumns.add("23andMe-Sample");
+		additionalColumns.add("sample-23andMe");
 
 		SAMSequenceDictionary sequenceDict = generateSequenceDictionary(chromosome);
 
@@ -214,7 +218,7 @@ public class GenerateVCF extends Tool {
 			genotypes.add(gt);
 		}
 
-		return new VariantContextBuilder("23AndMe", chrom, position, position, alleles).genotypes(genotypes)
+		return new VariantContextBuilder("23andMe", chrom, position, position, alleles).genotypes(genotypes)
 				.attributes(attributes).id(rsid).make();
 	}
 
