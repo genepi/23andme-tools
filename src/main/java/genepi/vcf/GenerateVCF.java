@@ -78,7 +78,8 @@ public class GenerateVCF extends Tool {
 				if (dataReader.get().startsWith("#")) {
 					continue;
 				}
-				//Process only a given sets of chromosomes
+				
+				// order chromosomes descending
 				String[] chromosomeParts = null;
 				if(chromosomes != null){
 					chromosomeParts = chromosomes.split(",");
@@ -88,6 +89,7 @@ public class GenerateVCF extends Tool {
 				//parse 23andMe genome line
 				Genome genome = new Genome(dataReader.get());
 				
+				//Process only a given sets of sorted chromosomes
 				if (chromosomes!=null && !Arrays.asList(chromosomeParts).contains(genome.getChromosome())) {
 					chipReader.next();
 					continue;
@@ -98,9 +100,6 @@ public class GenerateVCF extends Tool {
 				Chip chip = new Chip(chipReader.get());
 				
 				if (genome.getPos() != chip.getPos()) {
-					System.out.println(genome.getChromosome());
-					System.out.println(genome.getPos());
-					System.out.println(chip.getPos());
 					System.err.println("Control chip version! Positions should be identical in both files");
 					System.exit(-1);
 				}
