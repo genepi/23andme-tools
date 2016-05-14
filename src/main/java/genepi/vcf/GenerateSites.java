@@ -24,8 +24,8 @@ public class GenerateSites extends Tool {
 	@Override
 	public void createParameters() {
 
-		addParameter("ref", "input human_g1k_v37.fasta");
-		addParameter("genome", "input your personal 23andme raw data");
+		addParameter("ref", "input reference (human_g1k_v37.fasta)");
+		addParameter("genome", "input your personal 23andme data (as txt)");
 		addParameter("out", "output chip target list");
 
 	}

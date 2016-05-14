@@ -7,7 +7,7 @@
 	<version>0.1</version>
 	<packaging>jar</packaging>
 
-	<name>VCF-Tools</name>
+	<name>23andMe to VCF</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
