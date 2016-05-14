@@ -39,3 +39,13 @@ mvn install
 java -jar vcf-tools-0.1.jar vcf-generator --genome <your-genome.txt> --chip <chip-version.txt> --chromosomes <set of chromosomes> --out <vcf-destination-folder>
 
 ```
+## 23andMe Tools 101 
+
+```bash
+git clone https://github.com/seppinho/23andme-tools.git
+cd 23andme-tools
+mvn install
+java -jar vcf-tools-0.1.jar site-generator --genome my-genome.txt --ref human_g1k_v37.fasta --out chip-v4.txt
+java -jar vcf-tools-0.1.jar vcf-generator --genome my-genome.txt --chip chip-v4.txt --out vcfs
+
+
