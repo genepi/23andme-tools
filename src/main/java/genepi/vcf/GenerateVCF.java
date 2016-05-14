@@ -3,6 +3,7 @@ package genepi.vcf;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,7 +51,7 @@ public class GenerateVCF extends Tool {
 		addParameter("genome", "input 23andme raw data");
 		addParameter("chip", "input chip target list");
 		addParameter("out", "output vcf directory");
-		addOptionalParameter("chr", "chr to convert", STRING);
+		addOptionalParameter("chromosomes", "specify list of chromosomes, e.g. 1,3,5", STRING);
 
 	}
 
@@ -61,7 +62,7 @@ public class GenerateVCF extends Tool {
 			String in = (String) getValue("genome");
 			String chipName = (String) getValue("chip");
 			String outDirectory = (String) getValue("out");
-			String chr = (String) getValue("chr");
+			String chromosomes = (String) getValue("chromosomes");
 			
 			new File(outDirectory).mkdirs();
 
@@ -69,6 +70,7 @@ public class GenerateVCF extends Tool {
 			LineReader dataReader = new LineReader(in);
 			VariantContextWriter vcfWriter = null;
 			VCFHeader header = null;
+			int counter = 0;
 			String prev = "";
 
 			while (dataReader.next()) {
@@ -76,19 +78,29 @@ public class GenerateVCF extends Tool {
 				if (dataReader.get().startsWith("#")) {
 					continue;
 				}
-
+				//Process only a given sets of chromosomes
+				String[] chromosomeParts = null;
+				if(chromosomes != null){
+					chromosomeParts = chromosomes.split(",");
+				Arrays.sort(chromosomeParts);
+				}
+				
+				//parse 23andMe genome line
 				Genome genome = new Genome(dataReader.get());
-
-				chipReader.next();
-				Chip chip = new Chip(chipReader.get());
-
-				//if chr option is set, go to this location and start converting
-				if (chr!=null && !genome.getChromosome().equals(chr)) {
+				
+				if (chromosomes!=null && !Arrays.asList(chromosomeParts).contains(genome.getChromosome())) {
 					chipReader.next();
 					continue;
 				}
-
+				
+				//parse chip specification
+				chipReader.next();
+				Chip chip = new Chip(chipReader.get());
+				
 				if (genome.getPos() != chip.getPos()) {
+					System.out.println(genome.getChromosome());
+					System.out.println(genome.getPos());
+					System.out.println(chip.getPos());
 					System.err.println("Control chip version! Positions should be identical in both files");
 					System.exit(-1);
 				}
@@ -109,8 +121,9 @@ public class GenerateVCF extends Tool {
 				}
 
 				if (!chromosome.equals(prev)) {
-
+					
 					if (vcfWriter != null) {
+						System.out.println("chr" + prev +" - #sites: " + counter);
 						vcfWriter.close();
 					}
 
@@ -125,6 +138,8 @@ public class GenerateVCF extends Tool {
 					vcfWriter.writeHeader(header);
 
 					prev = chromosome;
+					
+					counter = 0;
 
 				}
 
@@ -151,13 +166,16 @@ public class GenerateVCF extends Tool {
 				alleles.add(altAllele);
 
 				if (heterozygous) {
-
+					
+					counter++;
 					// set alleles for genotype
 					vcfWriter.add(createVC(header, chromosome, genome.getRsid(), alleles, alleles, genome.getPos()));
 
 				} else if (homozygous) {
 
+					counter++;
 					final List<Allele> genotypes = new ArrayList<Allele>();
+					genotypes.add(altAllele);
 					genotypes.add(altAllele);
 					vcfWriter.add(createVC(header, chromosome, genome.getRsid(), alleles, genotypes, genome.getPos()));
 
@@ -165,6 +183,7 @@ public class GenerateVCF extends Tool {
 
 			} // while loop
 
+			System.out.println("chr" + prev +" - #sites: " + counter);
 			vcfWriter.close();
 
 			return 0;
@@ -209,7 +228,7 @@ public class GenerateVCF extends Tool {
 
 	private VariantContext createVC(VCFHeader header, String chrom, String rsid, List<Allele> alleles,
 			List<Allele> genotype, int position) {
-
+		
 		final Map<String, Object> attributes = new HashMap<String, Object>();
 		final GenotypesContext genotypes = GenotypesContext.create(header.getGenotypeSamples().size());
 
