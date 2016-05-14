@@ -38,6 +38,7 @@ public class GenerateSites extends Tool {
 			String genome = (String) getValue("genome");
 			String ref = (String) getValue("ref");
 			String out = (String) getValue("out");
+			
 
 			LineReader reader = new LineReader(genome);
 			IndexedFastaSequenceFile file = new IndexedFastaSequenceFile(new File(ref));
