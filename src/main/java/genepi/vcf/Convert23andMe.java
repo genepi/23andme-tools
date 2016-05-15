@@ -98,7 +98,7 @@ public class Convert23andMe extends Tool {
 				String g1 = null;
 
 				// Process only a given sets of sorted chromosomes
-				if (chromosomes != null && !Arrays.asList(chromosomeParts).contains(genome.getChromosome())) {
+				if (chromosomeParts != null && !Arrays.asList(chromosomeParts).contains(genome.getChromosome())) {
 					continue;
 				}
 				
@@ -125,9 +125,9 @@ public class Convert23andMe extends Tool {
 					vcfWriter = builder.build();
 
 					vcfWriter.writeHeader(header);
-
+					
+					//prepare for next chromosome
 					prev = chromosome;
-
 					counter = 0;
 
 				}
@@ -145,12 +145,12 @@ public class Convert23andMe extends Tool {
 					g1 = genotype.substring(1, 2);
 				}
 
-				// heterozygous check
+				// heterozygous genotype check
 				if (g1 != null && !g0.equals(g1)) {
 					altAllele = Allele.create(!refPos.equals(g0) ? g0 : g1, false);
 					heterozygous = true;
 				}
-				// homozygous check
+				// homozygous genotype check
 				else if (!refPos.equals(g0)) {
 					altAllele = Allele.create(g0, false);
 					homozygous = true;
