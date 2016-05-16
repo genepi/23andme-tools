@@ -1,6 +1,6 @@
 # 23andMe Tools - Convert your 23andMe genotypes to VCF files
 
-This project provides a Java implementation to convert your 23andMe genotype data into compressed VCFs (vcf.gz). VCF files can be useful for **imputation** with the [Michigan Imputation Server](https://imputationserver.sph.umich.edu) or for **mitochondrial haplogroup classification** with [HaploGrep](http://haplogrep.uibk.ac.at).
+This project provides a Java implementation to convert your 23andMe genotype data into compressed VCFs (vcf.gz). VCF files can be useful for **imputation** with the [Michigan Imputation Server](https://imputationserver.sph.umich.edu) or for **mitochondrial haplogroup classification** with [HaploGrep2](http://haplogrep.uibk.ac.at).
 
 ## Download your data
 Your personal genome can be downloaded from [here](https://www.23andme.com/you/download). After entering your secure answer, the complete dataset can be downloaded at once.
@@ -21,16 +21,17 @@ The current version of the 23andMe genotyping chip v4 (> Nov 2013) is based on t
 ## Usage Examples
 
 ### Default Command
-This command downloads the fasta reference and writes each chromosome (chr1-22,X,Y,MT) to a seperate vcf.gz file. Add ```--split false``` to write one VCF file. 
+This command downloads the fasta reference and writes each chromosome (chr1-22,X,Y,MT) to a seperate vcf.gz file:
 
 ```bash
 java -jar vcf-tools-0.1.jar vcf-generator --in /path/to/23andMe-genome.txt 
 --ref v37 --out /path/to/vcfDir 
 ```
+Add ```--split false``` to write one VCF file. The chromosome MT file can be used with HaploGrep2.
 
 ### Generating VCFs for Michigan Imputation Server
-
+The Imputation Server accepts vcf.gz files split by chromosome, which can be created with the following command:
 ```bash
 java -jar vcf-tools-0.1.jar vcf-generator --in /path/to/23andMe-genome.txt 
---ref /path/to/human_g1k_v37.fasta --out /path/to/vcfDir --exclude X,Y,MT
+--ref /path/to/human_g1k_v37.fasta --out /path/to/vcfDir --exclude Y,MT
 ```
