@@ -7,8 +7,7 @@ public class GenotypeLine {
 	int pos;
 	String genotype;
 
-	public GenotypeLine(String line) {
-		parse(line);
+	public GenotypeLine() {
 	}
 
 	public String getRsid() {
@@ -43,7 +42,7 @@ public class GenotypeLine {
 		this.genotype = genotype;
 	}
 
-	private void parse(String line) {
+	public void parse(String line) {
 
 		String[] splits = line.split("\t");
 		this.rsid = splits[0];
