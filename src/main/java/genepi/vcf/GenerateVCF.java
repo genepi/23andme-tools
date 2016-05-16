@@ -12,7 +12,7 @@ import java.util.Set;
 import genepi.base.Tool;
 import genepi.io.text.LineReader;
 import genepi.objects.Chip;
-import genepi.objects.Genome;
+import genepi.objects.GenotypeLine;
 import genepi.util.Chromosome;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
@@ -87,7 +87,7 @@ public class GenerateVCF extends Tool {
 				}
 				
 				//parse 23andMe genome line
-				Genome genome = new Genome(dataReader.get());
+				GenotypeLine genome = new GenotypeLine(dataReader.get());
 				
 				//Process only a given sets of sorted chromosomes
 				if (chromosomes!=null && !Arrays.asList(chromosomeParts).contains(genome.getChromosome())) {

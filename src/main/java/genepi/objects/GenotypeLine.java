@@ -1,13 +1,13 @@
 package genepi.objects;
 
-public class Genome {
+public class GenotypeLine {
 
 	String rsid;
 	String chromosome;
 	int pos;
 	String genotype;
 
-	public Genome(String line) {
+	public GenotypeLine(String line) {
 		parse(line);
 	}
 

@@ -1,7 +1,10 @@
 package genepi.vcf;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,10 +12,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
+
+import org.apache.commons.io.FileUtils;
+
 import genepi.base.Tool;
 import genepi.io.text.LineReader;
 import genepi.objects.Chip;
-import genepi.objects.Genome;
+import genepi.objects.GenotypeLine;
 import genepi.util.Chromosome;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
@@ -34,6 +41,8 @@ import htsjdk.variant.vcf.VCFHeaderLineType;
 import htsjdk.variant.vcf.VCFHeaderVersion;
 
 public class Convert23andMe extends Tool {
+
+	private static String GRCh37_PATH = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta";
 
 	public Convert23andMe(String[] args) {
 		super(args);
@@ -65,17 +74,30 @@ public class Convert23andMe extends Tool {
 			String chromosomes = (String) getValue("chromosomes");
 			String outDirectory = (String) getValue("out");
 
-			LineReader genomeReader = new LineReader(in);
-			IndexedFastaSequenceFile fasta = new IndexedFastaSequenceFile(new File(ref));
 			VariantContextWriter vcfWriter = null;
 			VCFHeader header = null;
-		
+			
+			//download reference 
+			String fastaPath = "human_g1k_v37.fasta";
+			if (ref.equals("v37") && !new File(fastaPath).exists()) {
+				
+				System.out.println("Download Reference GRCh37 from " +  GRCh37_PATH+".gz");
+				FileUtils.copyURLToFile(new URL(GRCh37_PATH + ".gz"), new File(fastaPath+".gz"));
+				FileUtils.copyURLToFile(new URL(GRCh37_PATH + ".fai"), new File(fastaPath+".fai"));
+				gunzip("human_g1k_v37.fasta.gz", fastaPath);
+				ref = fastaPath;
+
+			}
 
 			// create final output directory
 			new File(outDirectory).mkdirs();
 			int counter = 0;
 			String prev = "";
 
+			//initial everything
+			LineReader genomeReader = new LineReader(in);
+			IndexedFastaSequenceFile refFasta = new IndexedFastaSequenceFile(new File(ref));
+			
 			// loop over 23andMe file
 			while (genomeReader.next()) {
 
@@ -83,32 +105,29 @@ public class Convert23andMe extends Tool {
 					continue;
 				}
 
-				// order chromosomes descending
-				String[] chromosomeParts = null;
-				if (chromosomes != null) {
-					chromosomeParts = chromosomes.split(",");
-					Arrays.sort(chromosomeParts);
-				}
-
 				// parse 23andMe input line
-				Genome genome = new Genome(genomeReader.get());
-				String genotype = genome.getGenotype();
-				String chromosome = genome.getChromosome();
+				GenotypeLine line = new GenotypeLine(genomeReader.get());
+				String genotype = line.getGenotype();
+				String chromosome = line.getChromosome();
 				String g0 = genotype.substring(0, 1);
 				String g1 = null;
 
-				// Process only a given sets of sorted chromosomes
-				if (chromosomeParts != null && !Arrays.asList(chromosomeParts).contains(genome.getChromosome())) {
+				// order chromosomes (one time loop over file)
+				String[] chromosomeParts = null;
+				if (chromosomes != null) {
+					chromosomeParts = chromosomes.split(",");
+				}
+				if (chromosomeParts != null && !Arrays.asList(chromosomeParts).contains(line.getChromosome())) {
 					continue;
 				}
-				
-				// Exclude indels and unsupported alleles
-				if (genome.getGenotype().contains("I") || genotype.contains("D") || genotype.contains("-")
+
+				// Exclude indels, unsupported & multialleleic alleles
+				if (line.getGenotype().contains("I") || genotype.contains("D") || genotype.contains("-")
 						|| genotype.length() > 2) {
 					continue;
 				}
 
-				//prepare file for each chromosome
+				// prepare file for each chromosome
 				if (!chromosome.equals(prev)) {
 
 					if (vcfWriter != null) {
@@ -125,15 +144,15 @@ public class Convert23andMe extends Tool {
 					vcfWriter = builder.build();
 
 					vcfWriter.writeHeader(header);
-					
-					//prepare for next chromosome
+
+					// prepare for next chromosome
 					prev = chromosome;
 					counter = 0;
 
 				}
 
 				// get reference position from fasta
-				String refPos = fasta.getSubsequenceAt(genome.getChromosome(), genome.getPos(), genome.getPos())
+				String refPos = refFasta.getSubsequenceAt(line.getChromosome(), line.getPos(), line.getPos())
 						.getBaseString();
 
 				Allele refAllele = Allele.create(refPos, true);
@@ -167,7 +186,7 @@ public class Convert23andMe extends Tool {
 
 					counter++;
 					// set alleles for genotype
-					vcfWriter.add(createVC(header, chromosome, genome.getRsid(), alleles, alleles, genome.getPos()));
+					vcfWriter.add(createVC(header, chromosome, line.getRsid(), alleles, alleles, line.getPos()));
 
 				} else if (homozygous) {
 
@@ -175,7 +194,7 @@ public class Convert23andMe extends Tool {
 					final List<Allele> genotypes = new ArrayList<Allele>();
 					genotypes.add(altAllele);
 					genotypes.add(altAllele);
-					vcfWriter.add(createVC(header, chromosome, genome.getRsid(), alleles, genotypes, genome.getPos()));
+					vcfWriter.add(createVC(header, chromosome, line.getRsid(), alleles, genotypes, line.getPos()));
 
 				}
 
@@ -183,12 +202,13 @@ public class Convert23andMe extends Tool {
 
 			System.out.println("chr" + prev + " - #sites: " + counter);
 			vcfWriter.close();
-			fasta.close();
+			refFasta.close();
 
 			return 0;
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
 			return -1;
 		}
 	}
@@ -238,6 +258,33 @@ public class Convert23andMe extends Tool {
 
 		return new VariantContextBuilder("23andMe", chrom, position, position, alleles).genotypes(genotypes)
 				.attributes(attributes).id(rsid).make();
+	}
+
+	public void gunzip(String inFile, String outFile) {
+
+		byte[] buffer = new byte[1024];
+
+		try {
+
+			System.out.println("Uncompress...");
+			
+			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(inFile));
+
+			FileOutputStream out = new FileOutputStream(outFile);
+
+			int len;
+			while ((len = gzis.read(buffer)) > 0) {
+				out.write(buffer, 0, len);
+			}
+
+			gzis.close();
+			out.close();
+
+			System.out.println("Done");
+
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	public static void main(String[] args) {
