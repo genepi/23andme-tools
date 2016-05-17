@@ -1,5 +1,6 @@
 package genepi.util;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,7 +17,7 @@ public class FileUtil {
 
 		try {
 
-			System.out.println("Uncompress...");
+			System.out.println("Gunzip...");
 
 			GZIPInputStream gzis = new GZIPInputStream(new FileInputStream(inFile));
 
@@ -37,11 +38,13 @@ public class FileUtil {
 		}
 	}
 	
-	public static void unzip(String in, String out){
+	public static void unzip(String in){
 
+		System.out.println("Unzip...");
+		
 	    try {
 	         ZipFile zipFile = new ZipFile(in);
-	         zipFile.extractAll("out");
+	         zipFile.extractAll(in.substring(0,in.lastIndexOf(File.separator)));
 	    } catch (ZipException e) {
 	        e.printStackTrace();
 	    }
