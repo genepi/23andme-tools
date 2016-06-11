@@ -1,10 +1,13 @@
 package genepi.vcf;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+
 import genepi.base.Tool;
 
-public class Convert23andMe extends Tool {
+public class VCFConverter extends Tool {
 
-	public Convert23andMe(String[] args) {
+	public VCFConverter(String[] args) {
 		super(args);
 	}
 
@@ -44,18 +47,28 @@ public class Convert23andMe extends Tool {
 		String out = (String) getValue("out");
 		String split = (String) getValue("split");
 
-		VCFBuilder vcfCreator = new VCFBuilder(in);
-		vcfCreator.setReference(ref);
-		vcfCreator.setOutDirectory(out);
-		vcfCreator.setExcludeList(exclude);
+		VCFBuilder builder = new VCFBuilder(in);
+		builder.setReference(ref);
+		builder.setOutDirectory(out);
+		builder.setExcludeList(exclude);
 		if (split != null)
-			vcfCreator.setSplit(Boolean.valueOf(split));
+			builder.setSplit(Boolean.valueOf(split));
 
-		return vcfCreator.buildVCF();
+		try {
+			return builder.build();
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return -1;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return -1;
+		}
 	}
 
 	public static void main(String[] args) {
-		new Convert23andMe(args).start();
+		new VCFConverter(args).start();
 	}
 
 }

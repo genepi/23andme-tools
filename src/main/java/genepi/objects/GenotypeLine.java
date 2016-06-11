@@ -1,5 +1,7 @@
 package genepi.objects;
 
+import java.io.IOException;
+
 public class GenotypeLine {
 
 	String rsid;
@@ -42,9 +44,12 @@ public class GenotypeLine {
 		this.genotype = genotype;
 	}
 
-	public void parse(String line) {
-
+	public void parse(String line) throws IOException {
 		String[] splits = line.split("\t");
+		
+		if(splits.length != 4){
+			throw new IOException("The supported 23andMe format contains 4 tab-delimted columns (rsid chromosome pos genotype).");
+		}
 		this.rsid = splits[0];
 		this.chromosome = splits[1];
 		this.pos = Integer.valueOf(splits[2]);

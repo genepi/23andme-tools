@@ -22,10 +22,10 @@ import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import htsjdk.variant.vcf.VCFHeaderLineType;
 import htsjdk.variant.vcf.VCFHeaderVersion;
-import htsjdk.variant.vcf.VCFInfoHeaderLine;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,7 +50,7 @@ public class VCFBuilder {
 		this.genome = genome;
 	}
 
-	public int buildVCF() {
+	public int build() throws MalformedURLException, IOException {
 
 		VariantContextWriter vcfWriter = null;
 		VCFHeader header = null;
@@ -60,8 +60,6 @@ public class VCFBuilder {
 
 		// create final output directory
 		new File(outDirectory).mkdirs();
-
-		try {
 
 			// download reference
 			if (reference.equals("v37")) {
@@ -213,10 +211,6 @@ public class VCFBuilder {
 
 			return 0;
 
-		} catch (IOException e) {
-			e.printStackTrace();
-			return -1;
-		}
 	}
 
 	private VCFHeader generateHeader(String name, String chromosome) {

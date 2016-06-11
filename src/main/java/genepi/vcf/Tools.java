@@ -16,7 +16,7 @@ public class Tools extends Toolbox {
 		
 		Tools tools = new Tools("java -jar vcf-tools-0.1.jar", args);
 		
-		tools.addTool("vcf-generator", Convert23andMe.class);
+		tools.addTool("vcf-generator", VCFConverter.class);
 		
 		try {
 			tools.start();
