@@ -148,55 +148,50 @@ public class VCFBuilder {
 
 				}
 
-				// get position from fasta reference
-				String refPos = refFasta.getSubsequenceAt(line.getChromosome(),
-						line.getPos(), line.getPos()).getBaseString();
+			// get position from fasta reference
+			String refPos = refFasta.getSubsequenceAt(line.getChromosome(),
+					line.getPos(), line.getPos()).getBaseString();
 
-				Allele refAllele = Allele.create(refPos, true);
-				Allele altAllele = null;
-				boolean heterozygous = false;
-				boolean homozygous = false;
+			Allele refAllele = Allele.create(refPos, true);
 
-				if (genotype.length() == 2) {
-					g1 = genotype.substring(1, 2);
-				}
+			if (genotype.length() == 2) {
+				g1 = genotype.substring(1, 2);
+			}
 
-				// heterozygous genotype check
-				if (g1 != null && !g0.equals(g1)) {
-					altAllele = Allele.create(!refPos.equals(g0) ? g0 : g1,
-							false);
-					heterozygous = true;
-				}
-				// homozygous genotype check
-				else if (!refPos.equals(g0)) {
-					altAllele = Allele.create(g0, false);
-					homozygous = true;
-				}
-				// do nothing since its identical to the reference.
-				else {
-				}
+			final List<Allele> alleles = new ArrayList<Allele>();
+			final List<Allele> genotypes = new ArrayList<Allele>();
+			alleles.add(refAllele);
 
-				final List<Allele> alleles = new ArrayList<Allele>();
-				alleles.add(refAllele);
+			if (g1 != null && !g0.equals(g1)) {
+				if (!refPos.equals(g0) && !refPos.equals(g1)) {
+					// both alleles differ from reference -> multiallelic
+					Allele alt1 = Allele.create(g0, false);
+					Allele alt2 = Allele.create(g1, false);
+					alleles.add(alt1);
+					alleles.add(alt2);
+					genotypes.add(alt1);
+					genotypes.add(alt2);
+				} else {
+					Allele altAllele = Allele.create(
+							!refPos.equals(g0) ? g0 : g1, false);
+					alleles.add(altAllele);
+					genotypes.add(refAllele);
+					genotypes.add(altAllele);
+				}
+			} else if (!refPos.equals(g0)) {
+				Allele altAllele = Allele.create(g0, false);
 				alleles.add(altAllele);
+				genotypes.add(altAllele);
+				genotypes.add(altAllele);
+			} else {
+				// homozygous reference
+				genotypes.add(refAllele);
+				genotypes.add(refAllele);
+			}
 
-				if (heterozygous) {
-
-					counter++;
-					// set alleles for genotype
-					vcfWriter.add(createVC(header, chromosome, line.getRsid(),
-							alleles, alleles, line.getPos()));
-
-				} else if (homozygous) {
-
-					counter++;
-					final List<Allele> genotypes = new ArrayList<Allele>();
-					genotypes.add(altAllele);
-					genotypes.add(altAllele);
-					vcfWriter.add(createVC(header, chromosome, line.getRsid(),
-							alleles, genotypes, line.getPos()));
-
-				}
+			counter++;
+			vcfWriter.add(createVC(header, chromosome, line.getRsid(),
+					alleles, genotypes, line.getPos()));
 
 			} // while loop
 
